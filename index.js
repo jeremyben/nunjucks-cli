@@ -6,7 +6,9 @@ var nunjucks = require('nunjucks')
 var chokidar = require('chokidar')
 var mkdirp = require('mkdirp')
 var chalk = require('chalk')
-var yargs = require('yargs')
+var walkExt = require('./walk-ext')
+
+var argv = require('yargs')
   .usage('Usage: nj <file|*.ext> [context] [options]')
   .example('nj foo.tpl data.json', 'Compile foo.tpl to dist/foo.html')
   .example('nj *.tpl -w -p src -o dist',
@@ -41,8 +43,9 @@ var yargs = require('yargs')
   .help()
   .alias('help', 'h')
   .epilogue('For more information on Nunjucks: https://mozilla.github.io/nunjucks/api.html')
-  
-var argv = yargs.argv
+  .argv
+
+// Set defaults
 var opts = {}
 opts.dirIn = argv.path || null
 opts.dirOut = argv.out || null
@@ -51,18 +54,24 @@ opts.nunjucks = argv.options || {
   lstripBlocks: true,
   noCache: true
 }
-var env = nunjucks.configure(opts.dirIn, opts.nunjucks)
-var context = (argv._[1]) ? JSON.parse(fs.readFileSync(argv._[1], 'utf8')) : {}
 
+// Set Nunjucks environnement
+var env = nunjucks.configure(opts.dirIn, opts.nunjucks)
+
+// Parse second argument as data context if any
+opts.context = (argv._[1]) ? JSON.parse(fs.readFileSync(argv._[1], 'utf8')) : {}
+
+// Parse first argument
 if (argv._[0].indexOf('*') === 0) {
-  var allFiles = walkSync(opts.dirIn, path.extname(argv._[0]))
-  opts.glob = './**/*' + path.extname(argv._[0])
-  renderAll(allFiles, context)
+  opts.fileExt = path.extname(argv._[0])
+  opts.glob = './**/*' + opts.fileExt
+  renderAll(walkExt(opts.dirIn, opts.fileExt), opts.context, opts.dirOut)
 } else {
   opts.glob = argv._[0]
-  render(argv._[0], context)
+  render(argv._[0], opts.context, opts.dirOut)
 }
 
+// Watcher
 if (argv.watch) {
   opts.chokidar = {
     persistent: true,
@@ -76,6 +85,7 @@ if (argv.watch) {
     console.log(chalk.gray('Watching templates...'))
   })
 
+  // Sort files to not render partials/layouts
   watcher.on('add', function(file) {
     if (path.basename(file).indexOf('_') === 0) {
       layouts.push(file)
@@ -86,43 +96,31 @@ if (argv.watch) {
 
   watcher.on('change', function(file) {
     if (layouts.indexOf(file) > -1) {
-      renderAll(templates, context)
+      renderAll(templates, opts.context, opts.dirOut)
     } else {
-      render(file, context)
+      render(file, opts.context, opts.dirOut)
     }
   })
 }
 
-function render(file, data) {
+// Render one file
+function render(file, data, outputDir) {
+  outputDir = outputDir || null
   env.render(file, data, function(err, res) {
     if (err) return console.error(chalk.red(err))
-    var output = file.replace(/\.\w+$/, '') + '.html'
-    if (opts.dirOut) {
-      output = opts.dirOut + '\\' + output
-      mkdirp.sync(path.dirname(output))
+    var outputFile = file.replace(/\.\w+$/, '') + '.html'
+    if (outputDir) {
+      outputFile = outputDir + '\\' + outputFile
+      mkdirp.sync(path.dirname(outputFile))
     }
     console.log(chalk.blue('Rendering: ' + file))
-    fs.writeFileSync(output, res)
+    fs.writeFileSync(outputFile, res)
   })
 }
 
-function renderAll(files, data) {
+// Render multiple files
+function renderAll(files, data, outputDir) {
   for (var i = 0; i < files.length; i++) {
-    render(files[i], data)
+    render(files[i], data, outputDir)
   }
-}
-
-function walkSync(dir, ext, filelist) {
-  dir = dir || '.'
-  dir += '/'
-  filelist = filelist || []
-  var files = fs.readdirSync(dir)
-  files.forEach(function(file) {
-    if (fs.statSync(dir + file).isDirectory()) {
-      filelist = walkSync(dir + file + '/', ext, filelist)
-    } else {
-      if (path.extname(file) === ext && path.basename(file).indexOf('_') !== 0) filelist.push(file)
-    }
-  })
-  return filelist
 }
