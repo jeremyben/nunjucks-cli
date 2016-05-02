@@ -31,7 +31,12 @@ Allows to keep track of file changes and render accordingly (expect files starti
 ### `--options <file>`
 `-O <file>`
 
-Takes a json file as Nunjucks options.
+Takes a json file as Nunjucks options. Defaults are : 
+
+    trimBlocks: true,
+    lstripBlocks: true,
+    noCache: true
+
 See https://mozilla.github.io/nunjucks/api.html#configure
 
 #### Advanced examples
