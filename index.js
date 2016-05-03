@@ -49,7 +49,7 @@ var argv = require('yargs')
 var opts = {}
 opts.dirIn = argv.path || null
 opts.dirOut = argv.out || null
-opts.nunjucks = argv.options || {
+opts.nunjucks = (argv.options) ? JSON.parse(fs.readFileSync(argv.options, 'utf8')) : {
   trimBlocks: true,
   lstripBlocks: true,
   noCache: true
