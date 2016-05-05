@@ -110,7 +110,7 @@ function render(file, data, outputDir) {
     if (err) return console.error(chalk.red(err))
     var outputFile = file.replace(/\.\w+$/, '') + '.html'
     if (outputDir) {
-      outputFile = outputDir + '\\' + outputFile
+      outputFile = path.resolve(outputDir, outputFile);
       mkdirp.sync(path.dirname(outputFile))
     }
     console.log(chalk.blue('Rendering: ' + file))
