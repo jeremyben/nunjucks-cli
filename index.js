@@ -6,7 +6,7 @@ var nunjucks = require('nunjucks')
 var chokidar = require('chokidar')
 var mkdirp = require('mkdirp')
 var chalk = require('chalk')
-var walkExt = require('./walk-ext')
+var glob = require("glob")
 
 var argv = require('yargs')
   .usage('Usage: nunjucks <file|*.ext> [context] [options]')
@@ -61,15 +61,19 @@ var env = nunjucks.configure(opts.dirIn, opts.nunjucks)
 // Parse second argument as data context if any
 opts.context = (argv._[1]) ? JSON.parse(fs.readFileSync(argv._[1], 'utf8')) : {}
 
-// Parse first argument
-if (argv._[0].indexOf('*') === 0) {
-  opts.fileExt = path.extname(argv._[0])
-  opts.glob = './**/*' + opts.fileExt
-  renderAll(walkExt(opts.dirIn, opts.fileExt), opts.context, opts.dirOut)
-} else {
-  opts.glob = argv._[0]
-  render(argv._[0], opts.context, opts.dirOut)
+var targetTemplates = argv._[0]
+
+var globOpts = { 
+  strict: true,
+  cwd: (path.resolve(process.cwd(), opts.dirIn)),
+  nonull: true
 }
+
+// Render all of the targeted template files that are within the source path
+glob(targetTemplates, globOpts, function(err, files) { 
+  if (err) return console.error(chalk.red(err))  
+  renderAll(files, opts.context, opts.dirOut);
+})
 
 // Watcher
 if (argv.watch) {
