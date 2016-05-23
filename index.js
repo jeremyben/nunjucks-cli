@@ -9,9 +9,9 @@ var chalk = require('chalk')
 var walkExt = require('./walk-ext')
 
 var argv = require('yargs')
-  .usage('Usage: nj <file|*.ext> [context] [options]')
-  .example('nj foo.tpl data.json', 'Compile foo.tpl to dist/foo.html')
-  .example('nj *.tpl -w -p src -o dist',
+  .usage('Usage: nunjucks <file|*.ext> [context] [options]')
+  .example('nunjucks foo.tpl data.json', 'Compile foo.tpl to dist/foo.html')
+  .example('nunjucks *.tpl -w -p src -o dist',
     'Watch .tpl files in src folder, compile them to dist folder')
   .demand(1)
   .option('path', {
