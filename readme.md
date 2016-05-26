@@ -3,13 +3,13 @@ Simple Nunjucks CLI Wrapper and templates watcher, to generate static HTML files
 ## Installation
     npm i -g nunjucks-cli
 ## Usage
-    nunjucks <file|*.ext> [context] [options]
+    nunjucks <file|glob> [context] [options]
 #### Basic examples
     nunjucks foo.tpl data.json
 Compiles `foo.tpl` to `foo.html` with data from `data.json`.
 
-    nunjucks *.tpl
-Compiles all `.tpl` files, except the ones starting by `_`.
+    nunjucks **/*.tpl
+Compiles all `.tpl` files (including subdirectories), except the ones starting by `_`.
 
 ## Options
 ### `--path <directory>`
@@ -26,7 +26,7 @@ Output directory.
 ### `--watch`
 `-w`
 
-Allows to keep track of file changes and render accordingly (expect files starting by `_`).
+Allows to keep track of file changes and render accordingly (except files starting by `_`).
 
 ### `--options <file>`
 `-O <file>`
