@@ -6,10 +6,10 @@ var nunjucks = require('nunjucks')
 var chokidar = require('chokidar')
 var mkdirp = require('mkdirp')
 var chalk = require('chalk')
-var walkExt = require('./walk-ext')
+var glob = require("glob")
 
 var argv = require('yargs')
-  .usage('Usage: nunjucks <file|*.ext> [context] [options]')
+  .usage('Usage: nunjucks <file|glob> [context] [options]')
   .example('nunjucks foo.tpl data.json', 'Compile foo.tpl to dist/foo.html')
   .example('nunjucks *.tpl -w -p src -o dist',
     'Watch .tpl files in src folder, compile them to dist folder')
@@ -47,7 +47,7 @@ var argv = require('yargs')
 
 // Set defaults
 var opts = {}
-opts.dirIn = argv.path || null
+opts.dirIn = argv.path || ''
 opts.dirOut = argv.out || null
 opts.nunjucks = (argv.options) ? JSON.parse(fs.readFileSync(argv.options, 'utf8')) : {
   trimBlocks: true,
@@ -56,28 +56,33 @@ opts.nunjucks = (argv.options) ? JSON.parse(fs.readFileSync(argv.options, 'utf8'
 }
 
 // Set Nunjucks environnement
-var env = nunjucks.configure(opts.dirIn, opts.nunjucks)
+var env = nunjucks.configure(path.resolve(process.cwd(), opts.dirIn), opts.nunjucks)
 
 // Parse second argument as data context if any
 opts.context = (argv._[1]) ? JSON.parse(fs.readFileSync(argv._[1], 'utf8')) : {}
 
-// Parse first argument
-if (argv._[0].indexOf('*') === 0) {
-  opts.fileExt = path.extname(argv._[0])
-  opts.glob = './**/*' + opts.fileExt
-  renderAll(walkExt(opts.dirIn, opts.fileExt), opts.context, opts.dirOut)
-} else {
-  opts.glob = argv._[0]
-  render(argv._[0], opts.context, opts.dirOut)
+// Set glob options
+opts.glob = { 
+  strict: true,
+  cwd: path.resolve(process.cwd(), opts.dirIn),
+  ignore: '**/_*.*',
+  nonull: true
 }
+
+// Match glob pattern and render files accordingly
+glob(argv._[0], opts.glob, function(err, files) { 
+  if (err) return console.error(chalk.red(err))  
+  renderAll(files, opts.context, opts.dirOut)
+})
 
 // Watcher
 if (argv.watch) {
+
   opts.chokidar = {
     persistent: true,
-    cwd: opts.dirIn
+    cwd: path.resolve(process.cwd(), opts.dirIn)
   }
-  var watcher = chokidar.watch(opts.glob, opts.chokidar)
+  var watcher = chokidar.watch(argv._[0], opts.chokidar)
   var layouts = []
   var templates = []
 
@@ -94,6 +99,7 @@ if (argv.watch) {
     }
   })
 
+  // if the file is a layout/partial, render all other files instead
   watcher.on('change', function(file) {
     if (layouts.indexOf(file) > -1) {
       renderAll(templates, opts.context, opts.dirOut)
@@ -101,11 +107,14 @@ if (argv.watch) {
       render(file, opts.context, opts.dirOut)
     }
   })
+
 }
 
 // Render one file
 function render(file, data, outputDir) {
-  outputDir = outputDir || null
+  if (path.extname(file) === '.html')
+    return console.error(chalk.red('To avoid overwriting your templates, do not use html as file extension'))
+
   env.render(file, data, function(err, res) {
     if (err) return console.error(chalk.red(err))
     var outputFile = file.replace(/\.\w+$/, '') + '.html'
@@ -116,11 +125,14 @@ function render(file, data, outputDir) {
     console.log(chalk.blue('Rendering: ' + file))
     fs.writeFileSync(outputFile, res)
   })
+
 }
 
 // Render multiple files
 function renderAll(files, data, outputDir) {
+
   for (var i = 0; i < files.length; i++) {
     render(files[i], data, outputDir)
   }
+
 }
