@@ -61,7 +61,7 @@ var env = nunjucks.configure(path.resolve(process.cwd(), opts.dirIn), opts.nunju
 // Parse second argument as data context if any
 opts.context = (argv._[1]) ? JSON.parse(fs.readFileSync(argv._[1], 'utf8')) : {}
 
-opts.context.NODE_ENV = process.env.NODE_ENV;
+opts.context.env = process.env;
 
 // Set glob options
 opts.glob = { 
