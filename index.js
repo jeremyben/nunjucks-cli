@@ -40,6 +40,11 @@ var argv = require('yargs')
     nargs: 1,
     describe: 'Nunjucks options file'
   })
+  .option('unsafe', {
+    alias: 'u',
+    boolean: true,
+    describe: 'Allow use of .html as source files'
+  })
   .help()
   .alias('help', 'h')
   .epilogue('For more information on Nunjucks: https://mozilla.github.io/nunjucks/api.html')
@@ -62,7 +67,7 @@ var env = nunjucks.configure(path.resolve(process.cwd(), opts.dirIn), opts.nunju
 opts.context = (argv._[1]) ? JSON.parse(fs.readFileSync(argv._[1], 'utf8')) : {}
 
 // Set glob options
-opts.glob = { 
+opts.glob = {
   strict: true,
   cwd: path.resolve(process.cwd(), opts.dirIn),
   ignore: '**/_*.*',
@@ -70,8 +75,8 @@ opts.glob = {
 }
 
 // Match glob pattern and render files accordingly
-glob(argv._[0], opts.glob, function(err, files) { 
-  if (err) return console.error(chalk.red(err))  
+glob(argv._[0], opts.glob, function(err, files) {
+  if (err) return console.error(chalk.red(err))
   renderAll(files, opts.context, opts.dirOut)
 })
 
@@ -112,14 +117,14 @@ if (argv.watch) {
 
 // Render one file
 function render(file, data, outputDir) {
-  if (path.extname(file) === '.html')
-    return console.error(chalk.red('To avoid overwriting your templates, do not use html as file extension'))
+  if (!argv.unsafe && path.extname(file) === '.html')
+    return console.error(chalk.red(file + ': To use .html as source files, add --unsafe/-u flag'))
 
   env.render(file, data, function(err, res) {
     if (err) return console.error(chalk.red(err))
     var outputFile = file.replace(/\.\w+$/, '') + '.html'
     if (outputDir) {
-      outputFile = path.resolve(outputDir, outputFile);
+      outputFile = path.resolve(outputDir, outputFile)
       mkdirp.sync(path.dirname(outputFile))
     }
     console.log(chalk.blue('Rendering: ' + file))

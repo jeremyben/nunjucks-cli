@@ -28,10 +28,15 @@ Output directory.
 
 Allows to keep track of file changes and render accordingly (except files starting by `_`).
 
+### `--unsafe`
+`-u`
+
+Allows use of .html as source files extension.
+
 ### `--options <file>`
 `-O <file>`
 
-Takes a json file as Nunjucks options. Defaults are : 
+Takes a json file as Nunjucks options. Defaults are :
 
     trimBlocks: true,
     lstripBlocks: true,
