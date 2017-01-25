@@ -1,6 +1,6 @@
 {
   "name": "nunjucks-cli",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Nunjucks CLI wrapper and templates watcher",
   "main": "index.js",
   "preferGlobal": true,
