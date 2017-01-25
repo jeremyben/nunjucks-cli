@@ -15,7 +15,7 @@ Compiles all `.tpl` files (including subdirectories), except the ones starting b
 ### `--path <directory>`
 `-p <directory>`
 
-Path where the templates live. Default to the current working directory.
+Path where the templates live. Default to the current working directory. Multiple path options may be specified.
 See https://mozilla.github.io/nunjucks/api.html#configure
 
 ### `--out <directory>`
@@ -26,7 +26,7 @@ Output directory.
 ### `--watch`
 `-w`
 
-Allows to keep track of file changes and render accordingly (except files starting by `_`).
+Allows to keep track of file changes and render accordingly (except files starting by `_`). Where multiple `--path` options are given, only the first path is watched.
 
 ### `--unsafe`
 `-u`
