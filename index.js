@@ -85,7 +85,11 @@ if (argv.watch) {
 
   opts.chokidar = {
     persistent: true,
-    cwd: path.resolve(process.cwd(), opts.dirIn)
+    cwd: path.resolve(process.cwd(), opts.dirIn),
+    awaitWriteFinish: {
+      stabilityThreshold: 300,
+      pollInterval: 50
+    }
   }
   var watcher = chokidar.watch(argv._[0], opts.chokidar)
   var layouts = []
