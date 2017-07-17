@@ -42,6 +42,8 @@ Takes a json file as Nunjucks options. Defaults are :
     lstripBlocks: true,
     noCache: true
     
+-See https://mozilla.github.io/nunjucks/api.html#configure
+    
 ### `--noextension`
 `-e`
 
