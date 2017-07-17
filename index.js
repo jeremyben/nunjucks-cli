@@ -45,6 +45,13 @@ var argv = require('yargs')
     boolean: true,
     describe: 'Allow use of .html as source files'
   })
+  .option('ext', {
+    alias: 'e',
+    string: true,
+    requiresArg: false,
+    nargs: 1,
+    describe: 'Optional extension to add to all output files (defaults to .html)'
+  })
   .help()
   .alias('help', 'h')
   .epilogue('For more information on Nunjucks: https://mozilla.github.io/nunjucks/api.html')
@@ -52,6 +59,7 @@ var argv = require('yargs')
 
 // Set defaults
 var opts = {}
+opts.ext = argv.ext || '.html'
 opts.dirIn = argv.path || ''
 opts.dirOut = argv.out || null
 opts.nunjucks = (argv.options) ? JSON.parse(fs.readFileSync(argv.options, 'utf8')) : {
@@ -126,7 +134,7 @@ function render(file, data, outputDir) {
 
   env.render(file, data, function(err, res) {
     if (err) return console.error(chalk.red(err))
-    var outputFile = file.replace(/\.\w+$/, '') + '.html'
+    var outputFile = file.replace(/\.\w+$/, '') + opts.ext
     if (outputDir) {
       outputFile = path.resolve(outputDir, outputFile)
       mkdirp.sync(path.dirname(outputFile))
