@@ -41,8 +41,11 @@ Takes a json file as Nunjucks options. Defaults are :
     trimBlocks: true,
     lstripBlocks: true,
     noCache: true
+    
+### `--noextension`
+`-e`
 
-See https://mozilla.github.io/nunjucks/api.html#configure
+If enabled, do not add .html to output files.
 
 #### Advanced examples
 

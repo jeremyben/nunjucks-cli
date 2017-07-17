@@ -45,12 +45,10 @@ var argv = require('yargs')
     boolean: true,
     describe: 'Allow use of .html as source files'
   })
-  .option('ext', {
+  .option('noextension', {
     alias: 'e',
-    string: true,
-    requiresArg: false,
-    nargs: 1,
-    describe: 'Optional extension to add to all output files (defaults to .html)'
+    boolean: true,
+    describe: 'If enabled, do not add .html to compiled files'
   })
   .help()
   .alias('help', 'h')
@@ -59,7 +57,6 @@ var argv = require('yargs')
 
 // Set defaults
 var opts = {}
-opts.ext = argv.ext || '.html'
 opts.dirIn = argv.path || ''
 opts.dirOut = argv.out || null
 opts.nunjucks = (argv.options) ? JSON.parse(fs.readFileSync(argv.options, 'utf8')) : {
@@ -134,7 +131,10 @@ function render(file, data, outputDir) {
 
   env.render(file, data, function(err, res) {
     if (err) return console.error(chalk.red(err))
-    var outputFile = file.replace(/\.\w+$/, '') + opts.ext
+    var outputFile = file.replace(/\.\w+$/, '')
+    if (!argv.opts.noextension) {
+      outputFile += '.html'
+    }
     if (outputDir) {
       outputFile = path.resolve(outputDir, outputFile)
       mkdirp.sync(path.dirname(outputFile))
