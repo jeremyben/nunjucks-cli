@@ -45,7 +45,7 @@ var argv = require('yargs')
     boolean: true,
     describe: 'Allow use of .html as source files'
   })
-  .option('noextension', {
+  .option('noExtension', {
     alias: 'e',
     boolean: true,
     describe: 'If enabled, do not add .html to compiled files'
@@ -132,7 +132,7 @@ function render(file, data, outputDir) {
   env.render(file, data, function(err, res) {
     if (err) return console.error(chalk.red(err))
     var outputFile = file.replace(/\.\w+$/, '')
-    if (!argv.opts.noextension) {
+    if (!argv.noExtension) {
       outputFile += '.html'
     }
     if (outputDir) {
