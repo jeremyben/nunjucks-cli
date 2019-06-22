@@ -1,31 +1,37 @@
 {
-  "name": "nunjucks-cli",
-  "version": "0.4.9",
-  "description": "Nunjucks CLI wrapper and templates watcher",
-  "main": "index.js",
-  "preferGlobal": true,
-  "bin": {
-    "nunjucks": "./index.js"
-  },
-  "author": "jbensimon",
-  "license": "ISC",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/jeremyben/nunjucks-cli"
-  },
-  "keywords": [
-    "nunjucks",
-    "cli",
-    "watch",
-    "render",
-    "templates"
-  ],
-  "dependencies": {
-    "chalk": "^1.1.3",
-    "chokidar": "^1.4.3",
-    "glob": "^7.0.3",
-    "mkdirp": "^0.5.1",
-    "nunjucks": "^2.4.2",
-    "yargs": "^4.6.0"
-  }
+	"name": "nunjucks-cli",
+	"version": "1.0.0",
+	"description": "Nunjucks CLI wrapper and templates watcher",
+	"author": "Jeremy Bensimon",
+	"repository": "github:jeremyben/nunjucks-cli",
+	"license": "MIT",
+	"main": "main.js",
+	"bin": {
+		"nunjucks": "./main.js"
+	},
+	"files": [
+		"main.js"
+	],
+	"keywords": [
+		"nunjucks",
+		"cli",
+		"watch",
+		"render",
+		"templates"
+	],
+	"engines": {
+		"node": ">=6.4.0"
+	},
+	"engineStrict": true,
+	"scripts": {
+		"test": "node test.js"
+	},
+	"dependencies": {
+		"chalk": "^2.4.2",
+		"chokidar": "^3.0.1",
+		"glob": "^7.0.3",
+		"mkdirp": "^0.5.1",
+		"nunjucks": "^3.2.0",
+		"yargs": "^13.2.4"
+	}
 }
