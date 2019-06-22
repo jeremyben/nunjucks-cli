@@ -52,7 +52,7 @@ var argv = require('yargs')
 
 // Set defaults
 var opts = {}
-opts.dirIn = argv.path || ''
+opts.dirsIn = (argv.path instanceof Array) ? argv.path : [argv.path] || []
 opts.dirOut = argv.out || null
 opts.nunjucks = (argv.options) ? JSON.parse(fs.readFileSync(argv.options, 'utf8')) : {
   trimBlocks: true,
@@ -61,7 +61,11 @@ opts.nunjucks = (argv.options) ? JSON.parse(fs.readFileSync(argv.options, 'utf8'
 }
 
 // Set Nunjucks environnement
-var env = nunjucks.configure(path.resolve(process.cwd(), opts.dirIn), opts.nunjucks)
+var loaders = []
+for (var i = 0; i < opts.dirsIn.length; i++) {
+  loaders.push(new nunjucks.FileSystemLoader(path.resolve(process.cwd(), opts.dirsIn[i])))
+}
+var env = new nunjucks.Environment(loaders, opts.nunjucks)
 
 // Parse second argument as data context if any
 opts.context = (argv._[1]) ? JSON.parse(fs.readFileSync(argv._[1], 'utf8')) : {}
@@ -71,7 +75,7 @@ opts.context.env = process.env;
 // Set glob options
 opts.glob = {
   strict: true,
-  cwd: path.resolve(process.cwd(), opts.dirIn),
+  cwd: path.resolve(process.cwd(), opts.dirsIn[0]),
   ignore: '**/_*.*',
   nonull: true
 }
@@ -87,7 +91,7 @@ if (argv.watch) {
 
   opts.chokidar = {
     persistent: true,
-    cwd: path.resolve(process.cwd(), opts.dirIn),
+    cwd: path.resolve(process.cwd(), opts.dirsIn[0]),
     awaitWriteFinish: {
       stabilityThreshold: 300,
       pollInterval: 50
