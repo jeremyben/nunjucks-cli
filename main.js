@@ -74,12 +74,14 @@ const render = (/** @type {string[]} */ files) => {
 
 		let outputFile = file.replace(/\.\w+$/, `.${argv.extension}`)
 
+		console.log(chalk.blue('Rendering: ' + file))
+		console.log(chalk.blue('       as: ' + outputFile))
+
 		if (outputDir) {
 			outputFile = resolve(outputDir, outputFile)
 			mkdirp.sync(dirname(outputFile))
 		}
 
-		console.log(chalk.blue('Rendering: ' + file))
 		writeFileSync(outputFile, res)
 	}
 }
