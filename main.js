@@ -5,6 +5,8 @@ const { resolve, basename, dirname } = require('path')
 const nunjucks = require('nunjucks')
 const chokidar = require('chokidar')
 const glob = require('glob')
+const http = require('http')
+const serveHandler = require('serve-handler')
 const mkdirp = require('mkdirp')
 const chalk = require('chalk').default
 
@@ -36,6 +38,15 @@ const { argv } = require('yargs')
 		alias: 'w',
 		boolean: true,
 		describe: 'Watch files change, except files starting by "_"',
+	})
+	.option('serve', {
+		boolean: true,
+		describe: 'Local server',
+	})
+	.option('port', {
+		number: true,
+		default: 5000,
+		describe: 'Local server port',
 	})
 	.option('extension', {
 		alias: 'e',
@@ -115,4 +126,15 @@ if (argv.watch) {
 		if (layouts.indexOf(file) > -1) render(templates)
 		else render([file])
 	})
+
+	if (argv.serve) {
+		const servePort = argv.port;
+		const server = http.createServer((request, response) => {
+			return serveHandler(request, response);
+		})
+
+		server.listen(servePort, () => {
+			console.log(chalk.green('Serving on http://localhost:' + servePort))
+		});
+	}
 }
