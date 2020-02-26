@@ -52,6 +52,14 @@ Output directory.
 
 Allows to keep track of file changes and render accordingly (except files starting by `_`).
 
+### `--serve`
+
+Allows to run local server.
+
+### `--port`
+
+Set local server's port.
+
 ### `--extension <ext>`
 
 `-e <ext>`
