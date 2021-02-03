@@ -7,6 +7,7 @@ const chokidar = require('chokidar')
 const glob = require('glob')
 const mkdirp = require('mkdirp')
 const chalk = require('chalk').default
+const log = require('npmlog')
 
 const { argv } = require('yargs')
 	.usage('Usage: nunjucks <file|glob> [context] [options]')
@@ -51,6 +52,16 @@ const { argv } = require('yargs')
 		nargs: 1,
 		describe: 'Nunjucks options file',
 	})
+	.option('loglevel', {
+		alias: 'l',
+		string: true,
+		requiresArg: true,
+		default: 'info',
+		describe: 'Log level to use',
+		choices: ["silent", "error", "warn", "success", "info", "verbose", "silly"]
+	})
+
+log.level = argv.loglevel
 
 const inputDir = resolve(process.cwd(), argv.path) || ''
 const outputDir = argv.out || ''
@@ -79,7 +90,7 @@ const render = (/** @type {string[]} */ files) => {
 			mkdirp.sync(dirname(outputFile))
 		}
 
-		console.log(chalk.blue('Rendering: ' + file))
+		log.info(chalk.blue('Rendering: ' + file))
 		writeFileSync(outputFile, res)
 	}
 }
@@ -89,7 +100,7 @@ const globOptions = { strict: true, cwd: inputDir, ignore: '**/_*.*', nonull: tr
 
 // Render the files given a glob pattern (except the ones starting with "_")
 glob(argv._[0], globOptions, (err, files) => {
-	if (err) return console.error(chalk.red(err))
+	if (err) return log.error(chalk.red(err))
 	render(files)
 })
 
@@ -102,7 +113,7 @@ if (argv.watch) {
 	const watchOptions = { persistent: true, cwd: inputDir }
 	const watcher = chokidar.watch(argv._[0], watchOptions)
 
-	watcher.on('ready', () => console.log(chalk.gray('Watching templates...')))
+	watcher.on('ready', () => log.info(chalk.gray('Watching templates...')))
 
 	// Sort files to not render partials/layouts
 	watcher.on('add', (file) => {
