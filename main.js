@@ -1,18 +1,16 @@
 #! /usr/bin/env node
-
-const { readFileSync, writeFileSync } = require('fs')
+const { readdirSync, readFileSync, writeFileSync, statSync } = require('fs')
 const { resolve, basename, dirname } = require('path')
 const nunjucks = require('nunjucks')
 const chokidar = require('chokidar')
-const glob = require('glob')
 const mkdirp = require('mkdirp')
-const chalk = require('chalk').default
+const chalk = require('chalk')
+
 
 const { argv } = require('yargs')
 	.usage('Usage: nunjucks <file|glob> [context] [options]')
 	.example('nunjucks foo.tpl data.json', 'Compile foo.tpl to foo.html')
 	.example('nunjucks *.tpl -w -p src -o dist', 'Watch .tpl files in ./src, compile them to ./dist')
-	.demandCommand(1, 'You must provide at least a file/glob path')
 	.epilogue('For more information on Nunjucks: https://mozilla.github.io/nunjucks/')
 	.help()
 	.alias('help', 'h')
@@ -23,26 +21,22 @@ const { argv } = require('yargs')
 		string: true,
 		requiresArg: true,
 		nargs: 1,
-		describe: 'Path where templates live',
+		describe: 'Path where templates live, defaults to .',
+		default: "."
 	})
 	.option('out', {
 		alias: 'o',
 		string: true,
 		requiresArg: true,
 		nargs: 1,
-		describe: 'Output folder',
+		describe: 'Output folder, defaults to rendered',
+		required: true,
+		default: "rendered"
 	})
 	.option('watch', {
 		alias: 'w',
 		boolean: true,
 		describe: 'Watch files change, except files starting by "_"',
-	})
-	.option('extension', {
-		alias: 'e',
-		string: true,
-		requiresArg: true,
-		default: 'html',
-		describe: 'Extension of the rendered files',
 	})
 	.option('options', {
 		alias: 'O',
@@ -51,47 +45,48 @@ const { argv } = require('yargs')
 		nargs: 1,
 		describe: 'Nunjucks options file',
 	})
+	.option('data', {
+		alias: 'd',
+		string: true,
+		requiresArg: true,
+		nargs: 1,
+		describe: 'Nunjucks values file',
+	})
 
 const inputDir = resolve(process.cwd(), argv.path) || ''
-const outputDir = argv.out || ''
+const outputDir = argv.out
 
-const context = argv._[1] ? JSON.parse(readFileSync(argv._[1], 'utf8')) : {}
+const context = argv.data ? JSON.parse(readFileSync(argv.data, 'utf8')) : {}
 // Expose environment variables to render context
 context.env = process.env
 
 /** @type {nunjucks.ConfigureOptions} */
 const nunjucksOptions = argv.options
 	? JSON.parse(readFileSync(argv.options, 'utf8'))
-	: { trimBlocks: true, lstripBlocks: true, noCache: true }
+	: {
+		"tags": {
+			"variableStart": "${{",
+			"variableEnd": "}}"
+		},
+		"autoescape": false
+	}
 
 const nunjucksEnv = nunjucks.configure(inputDir, nunjucksOptions)
 
 const render = (/** @type {string[]} */ files) => {
 	for (const file of files) {
-		// No performance benefits in async rendering
-		// https://mozilla.github.io/nunjucks/api.html#asynchronous-support
-		const res = nunjucksEnv.render(file, context)
-
-		let outputFile = file.replace(/\.\w+$/, `.${argv.extension}`)
-
-		if (outputDir) {
-			outputFile = resolve(outputDir, outputFile)
-			mkdirp.sync(dirname(outputFile))
-		}
+		const inputFile = resolve(file)
+		const res = nunjucksEnv.render(inputFile, context)
+		outputFile = resolve(outputDir, file)
+		mkdirp.sync(dirname(outputFile))
 
 		console.log(chalk.blue('Rendering: ' + file))
 		writeFileSync(outputFile, res)
 	}
 }
 
-/** @type {glob.IOptions} */
-const globOptions = { strict: true, cwd: inputDir, ignore: '**/_*.*', nonull: true }
-
-// Render the files given a glob pattern (except the ones starting with "_")
-glob(argv._[0], globOptions, (err, files) => {
-	if (err) return console.error(chalk.red(err))
-	render(files)
-})
+const files = getFiles(argv.path)
+render(files)
 
 // Watcher
 if (argv.watch) {
@@ -115,4 +110,18 @@ if (argv.watch) {
 		if (layouts.indexOf(file) > -1) render(templates)
 		else render([file])
 	})
+}
+
+function getFiles (dir, files_){
+    files_ = files_ || [];
+    var files = readdirSync(dir);
+    for (var i in files){
+        var name = dir + '/' + files[i];
+        if (statSync(name).isDirectory()){
+            getFiles(name, files_);
+        } else {
+            files_.push(name);
+        }
+    }
+    return files_;
 }

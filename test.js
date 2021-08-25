@@ -1,34 +1,33 @@
 const { spawnSync } = require('child_process')
-const { readFileSync, readdirSync, unlinkSync, rmdirSync } = require('fs')
+const { readFileSync, readdirSync, unlinkSync, rmSync } = require('fs')
 const { ok, deepStrictEqual } = require('assert')
 
 process.env.NODE_ENV = 'development'
 
 const src = `fixtures`
-const dist = `fixtures/dist`
-const context = `fixtures/data.json`
-const glob = `*.tpl`
-const cmd = `node main.js ${glob} ${context} -p ${src} -o ${dist}`
+const dist = `rendered`
+const cmd = `node main.js -p ${src} -d ${src}/data.json`
 
 spawnSync(cmd, { shell: true, stdio: 'inherit' })
 
-const filesCompiled = readdirSync(dist)
-deepStrictEqual(filesCompiled, ['first.html', 'second.html'], 'Templates not rendered correctly')
+const renderedDir = dist+"/"+src
+const filesCompiled = readdirSync(renderedDir)
+deepStrictEqual(filesCompiled, ['_layout.tpl', 'data.json', 'first.tpl', 'second.tpl'], 'Templates not rendered correctly')
 
 for (const file of filesCompiled) {
-	const content = readFileSync(`${dist}/${file}`, 'utf8')
+	const content = readFileSync(`${renderedDir}/${file}`, 'utf8')
+	if (file.endsWith('.tpl')) {
+		ok(content.startsWith('<!DOCTYPE html>'), 'Layout not extended')
+	}
 
-	ok(content.startsWith('<!DOCTYPE html>'), 'Layout not extended')
-
-	if (file === 'first.html') {
+	if (file === 'first.tpl') {
 		ok(content.includes('json,file'), 'Context not interpolated')
 	}
 
-	if (file === 'second.html') {
+	if (file === 'second.tpl') {
 		ok(content.includes('development'), 'Env variable not passed')
 	}
 
-	unlinkSync(`${dist}/${file}`)
+	unlinkSync(`${renderedDir}/${file}`)
 }
-
-rmdirSync(dist)
+rmSync("rendered",{ recursive: true, force: true })
