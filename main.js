@@ -1,6 +1,6 @@
 #! /usr/bin/env node
 const { readdirSync, readFileSync, writeFileSync, statSync } = require('fs');
-const { resolve, basename, dirname } = require('path');
+const { resolve, basename, dirname, join } = require('path');
 const nunjucks = require('nunjucks');
 const chokidar = require('chokidar');
 const mkdirp = require('mkdirp');
@@ -62,7 +62,6 @@ const inputDir = resolve(process.cwd(), argv.path) || '';
 const outputDir = argv.out;
 // Expose environment variables to render context
 context.env = process.env;
-
 /** @type {nunjucks.ConfigureOptions} */
 const nunjucksOptions = argv.options
 	? JSON.parse(readFileSync(argv.options, 'utf8'))
@@ -90,8 +89,19 @@ const render = (/** @type {string[]} */ files) => {
 		writeFileSync(newOutputFile, res);
 	}
 };
+for (const value in context.values) {
+	if (typeof context.values[value] === 'object') {
+		for (let arrValues in context.values[value]) {
+			mkdirp.sync(
+				join(
+					resolve(process.cwd(), argv.out, argv.path),
+					context.values[value][arrValues],
+				),
+			);
+		}
+	}
+}
 const files = getFiles(argv.path);
-
 render(files);
 
 // Watcher
