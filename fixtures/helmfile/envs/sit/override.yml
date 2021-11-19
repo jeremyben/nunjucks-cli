@@ -1,0 +1,23 @@
+centralAddons:
+  global:
+    awsAccountId: ${{values.aws_acccount_id }}
+    awsRegion: ${{values.aws_region }}
+    channel: ${{values.channel }}
+    clusterName: ${{values.cluster_name }}
+    domain: ${{values.cluster_name }}.platform-eng.aws-ew1.dv.williamhill.plc
+    env: dev
+    newRelicLicenseKey: ${{ values.newrelic_licenseKey }}                                 # Could also use ref+awsssm:///common/newrelic_license_key
+    subnetIds: FILL-ME-IN
+
+  charts:
+    certManagerConfig:
+      values:
+        pcaClusterIssuer:
+          arn: ${{ values.pca_arn }}                                              # Could also use ref+awsssm:///common/pca_ca_arn
+
+    splunkKubernetesLogging:
+      values:
+        splunk:
+          hec:
+            indexName: ${{ values.splunk_default_index }}                                      # See https://conf.willhillatlas.com/display/CP/Splunk, Nick Perry has suggested we use the same index for all, but leaving the option here
+            token: ${{ values.splunk_hec_token }}                                          # Could also use ref+awsssm:///common/splunk_token

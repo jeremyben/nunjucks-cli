@@ -1,0 +1,70 @@
+##### Sample CI Pipeline for Istio/addons deployment
+# Environment/cluster templates
+.dev-${{values.cluster_name }}:
+  tags:
+  - cpe-aws-ec2-devcpe-eks
+  variables:
+    aws_account_name: dev
+    cluster: ${{ values.cluster_name }}
+    environment: sit
+    region: ${{ values.aws_region }} 
+
+
+# Main templates
+.helmfile-exec:
+  allow_failure: false
+  environment:
+    name: ${environment}/helmfile
+  image: docker-registry.prod.williamhill.plc/retail/helmfile:helm3.5.4-v0.139.3            # See https://gitlab.com/williamhillplc/usa/shared/docker/helmfile/-/tree/helm3.5.4-v0.139.3
+  script:
+  - |
+    aws eks update-kubeconfig --name ${cluster} --region ${region}
+    echo "https://${GITLAB_API_USER}:${GITLAB_API_KEY}@gitlab.com" >> ~/.git-credentials
+    git config --global credential.helper store
+    git config --global http.sslVerify false
+    # Toggle this to false if you do NOT want to use/customize the AWS VPC CNI config
+    if [[ true ]]; then ./scripts/cni-annotate-and-label.sh; fi
+    cd helmfile
+    helmfile --environment ${environment} deps
+    helmfile --environment ${environment} --log-level info ${command} --skip-deps
+
+
+# dev account
+## ${{values.cluster_name }}
+${{values.cluster_name }}:diff:
+  needs:
+  - initial:job
+  extends:
+  - .dev-${{values.cluster_name }}
+  - .helmfile-exec
+  stage: dev:istio-addons:diff
+  variables:
+    command: diff
+  when: manual
+  allow_failure: true
+
+
+${{values.cluster_name }}:sync:
+  dependencies:
+  - ${{values.cluster_name }}:diff
+  needs: ["${{values.cluster_name }}:diff"]
+  extends:
+  - .dev-${{values.cluster_name }}
+  - .helmfile-exec
+  stage: dev:istio-addons:sync
+  variables:
+    command: sync
+  when: manual
+
+
+${{values.cluster_name }}:destroy:
+  dependencies:
+  - ${{values.cluster_name }}:diff
+  needs: ["${{values.cluster_name }}:diff"]
+  extends:
+  - .dev-${{values.cluster_name }}
+  - .helmfile-exec
+  stage: dev:istio-addons:destroy
+  variables:
+    command: destroy
+  when: manual

@@ -1,0 +1,10 @@
+environments:
+  sit:
+    values:
+    - envs/sit/override.yml
+
+helmfiles:
+- path: git::https://gitlab.com/williamhillplc/platform-engineering/cpe/playground/eks-setup.git@helmfile/helmfile.d/?ref=0.0.4
+  values:
+  - git::https://gitlab.com/williamhillplc/platform-engineering/cpe/playground/eks-setup.git@helmfile/default-values.yaml?ref=0.0.4
+  - {{ toYaml .Values |  nindent 4 }}
