@@ -1,6 +1,6 @@
 #! /usr/bin/env node
 const { readdirSync, readFileSync, writeFileSync, statSync } = require('fs');
-const { resolve, basename, dirname, join } = require('path');
+const { resolve, basename, dirname, join, parse } = require('path');
 const nunjucks = require('nunjucks');
 const chokidar = require('chokidar');
 const mkdirp = require('mkdirp');
@@ -79,9 +79,38 @@ function interpolate(str, values) {
 		return eval(ref);
 	});
 }
+const unsupportedFormats = [
+	'gif',
+	'png',
+	'jpg',
+	'gif',
+	'webp',
+	'tiff',
+	'psd',
+	'raw',
+	'bmp',
+	'heif',
+	'indd',
+	'jpeg',
+	'svg',
+	'ai',
+	'eps',
+	'pdf',
+];
 const render = (/** @type {string[]} */ files) => {
 	for (const file of files) {
 		let inputFile = resolve(file);
+		let { ext } = parse(inputFile);
+		let currentFileExtention = ext.split('.')[1];
+		if (unsupportedFormats.includes(currentFileExtention)) {
+			const buffer = readFileSync(inputFile);
+			const bufferStr = buffer.toString('base64');
+			const originalBuffer = Buffer.from(bufferStr, 'base64');
+			let pathOfFile = join(resolve(outputDir), file);
+			mkdirp.sync(dirname(pathOfFile));
+			writeFileSync(pathOfFile, originalBuffer);
+			continue;
+		}
 		const res = nunjucksEnv.render(inputFile, context);
 		outputFile = resolve(outputDir, file);
 		let newOutputFile = interpolate(outputFile, context.values);
