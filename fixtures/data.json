@@ -1,5 +1,20 @@
 {
 	"this": "is",
-	"a": ["json", "file"],
-	"ok": true
+	"ok": true,
+	"values": {
+		"cluster_name": "eks01",
+		"description": "my EKS cluster via CLI",
+		"destination": "some/fun/path",
+		"owner": "cpe",
+		"channel": "platform-eng",
+		"classification": "Public",
+		"costcentre": "back-of-sofa",
+		"aws_acccount_id": "929049687855",
+		"aws_region": "eu-west-1",
+		"newrelic_licenseKey": "ref+awsssm:///common/newrelic_license_key",
+		"pca_arn": "ref+awsssm:///common/pca_ca_arn",
+		"splunk_hec_token": "ref+awsssm:///common/splunk_token",
+		"splunk_default_index": "wh_cpe_index",
+		"envs": ["dev", "nonprod"]
+	}
 }

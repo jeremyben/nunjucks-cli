@@ -1,0 +1,372 @@
+##### Sample CI Pipeline for EKS deployment
+# Environment/cluster templates
+.dev-:
+  tags:
+  - cpe-aws-ec2-devcpe-eks
+  variables:
+    aws_account_name: dev
+    cluster: 
+    region: big_boobies
+    HTTP_PROXY: http://webproxy:3128
+    HTTPS_PROXY: http://webproxy:3128
+    NO_PROXY: localhost,.big_boobies.eks.amazonaws.com,.williamhill.plc,.local,169.254.169.254,169.254.170.2,/var/run/docker.sock
+    K8S_PROXY_BYPASS: "true"
+    K8S_AUTOSCALER_DEPLOYMENT: "cluster-autoscaler"
+    K8S_AUTOSCALER_NAMESPACE: "kube-system"
+    K8S_AUTOSCALER_ENABLED: 1
+    K8S_AUTOSCALER_REPLICAS: 2
+    GLOBAL_HEALTH_WAIT: 10
+    GLOBAL_MAX_RETRY: 50
+    BATCH_SIZE: 10
+    CLUSTER_HEALTH_WAIT: 45
+    CLUSTER_HEALTH_RETRY: 10
+    AWS_DEFAULT_REGION: $region
+
+
+
+
+# Terraform/terragunt templates
+.terraform-plan:
+  allow_failure: false
+  artifacts:
+    expire_in: 1 day
+    paths:
+      - ${CI_PROJECT_DIR}/*.tfplan
+  image: docker-registry.prod.williamhill.plc:443/unity/terraform:0.13
+  script:
+  - |
+    echo "Setting up git SAS and on-prem repo auth cfg"
+    echo "https://${GITLAB_API_USER}:${GITLAB_API_KEY}@gitlab.com" >> ~/.git-credentials
+    echo "https://${ONPREM_GITLAB_API_USER}:${ONPREM_GITLAB_API_KEY}@git.nonprod.williamhill.plc" >> ~/.git-credentials
+    git config --global credential.helper store
+    git config --global http.sslVerify false
+    export RELEASE_VERSION=${CI_COMMIT_REF_NAME}
+    export TF_VAR_git_url=${CI_PROJECT_URL}
+    if [[ ${newrelic} == "true" ]]
+    then
+      stack=newrelic
+      asdf install terraform 0.14.5
+      asdf install terragrunt 0.28.21
+      export PATH=/home/deployer/.asdf/installs/terraform/0.14.5/bin/:$PATH
+    else
+      asdf install
+    fi
+    cd "${CI_PROJECT_DIR}/terragrunt/${aws_account_name}/${region}/${cluster}/${stack}"
+    terragrunt plan \
+      -input=false \
+      -out="${CI_PROJECT_DIR}/${aws_account_name}-${region}-${cluster}-${stack}-${CI_PIPELINE_ID}.tfplan" \
+      --terragrunt-non-interactive
+#  when: manual
+
+
+.terraform-apply:
+  allow_failure: false
+  artifacts:
+    expire_in: 1 day
+    paths:
+      - ${CI_PROJECT_DIR}/*.tfplan
+  image: docker-registry.prod.williamhill.plc:443/unity/terraform:0.13
+  script:
+  - |
+    echo "Setting up git SAS and on-prem repo auth cfg"
+    echo "https://${GITLAB_API_USER}:${GITLAB_API_KEY}@gitlab.com" >> ~/.git-credentials
+    echo "https://${ONPREM_GITLAB_API_USER}:${ONPREM_GITLAB_API_KEY}@git.nonprod.williamhill.plc" >> ~/.git-credentials
+    git config --global credential.helper store
+    git config --global http.sslVerify false
+    export RELEASE_VERSION=${CI_COMMIT_REF_NAME}
+    export TF_VAR_git_url=${CI_PROJECT_URL}
+    if [[ ${newrelic} == "true" ]]
+    then
+      stack=newrelic
+      asdf install terraform 0.14.5
+      asdf install terragrunt 0.28.21
+      export PATH=/home/deployer/.asdf/installs/terraform/0.14.5/bin/:$PATH
+    else
+      asdf install
+    fi
+    cd "${CI_PROJECT_DIR}/terragrunt/${aws_account_name}/${region}/${cluster}/${stack}"
+    terragrunt apply \
+      -input=false \
+      "${CI_PROJECT_DIR}/${aws_account_name}-${region}-${cluster}-${stack}-${CI_PIPELINE_ID}.tfplan" \
+      --terragrunt-non-interactive
+  when: manual
+
+.terraform-destroy-plan:
+  allow_failure: false
+  artifacts:
+    expire_in: 1 day
+    paths:
+      - ${CI_PROJECT_DIR}/*.tfplan
+  image: docker-registry.prod.williamhill.plc:443/unity/terraform:0.13
+  script:
+  - |
+    echo "Setting up git SAS and on-prem repo auth cfg"
+    echo "https://${GITLAB_API_USER}:${GITLAB_API_KEY}@gitlab.com" >> ~/.git-credentials
+    echo "https://${ONPREM_GITLAB_API_USER}:${ONPREM_GITLAB_API_KEY}@git.nonprod.williamhill.plc" >> ~/.git-credentials
+    git config --global credential.helper store
+    git config --global http.sslVerify false
+    export RELEASE_VERSION=${CI_COMMIT_REF_NAME}
+    export TF_VAR_git_url=${CI_PROJECT_URL}
+
+    if [[ ${newrelic} == "true" ]]
+    then
+      stack=newrelic
+      asdf install terraform 0.14.5
+      asdf install terragrunt 0.28.21
+      export PATH=/home/deployer/.asdf/installs/terraform/0.14.5/bin/:$PATH
+    else
+      asdf install
+    fi
+    cd "${CI_PROJECT_DIR}/terragrunt/${aws_account_name}/${region}/${cluster}/${stack}"
+    terragrunt plan \
+      -destroy \
+      -input=false \
+      -out="${CI_PROJECT_DIR}/${aws_account_name}-${region}-${cluster}-${stack}-${CI_PIPELINE_ID}.tfplan" \
+      --terragrunt-non-interactive
+  when: manual
+
+.terraform-destroy:
+  allow_failure: false
+  artifacts:
+    expire_in: 1 day
+    paths:
+      - ${CI_PROJECT_DIR}/*.tfplan
+  image: docker-registry.prod.williamhill.plc:443/unity/terraform:0.13
+  script:
+  - |
+    echo "Setting up git SAS and on-prem repo auth cfg"
+    echo "https://${GITLAB_API_USER}:${GITLAB_API_KEY}@gitlab.com" >> ~/.git-credentials
+    echo "https://${ONPREM_GITLAB_API_USER}:${ONPREM_GITLAB_API_KEY}@git.nonprod.williamhill.plc" >> ~/.git-credentials
+    git config --global credential.helper store
+    git config --global http.sslVerify false
+    export RELEASE_VERSION=${CI_COMMIT_REF_NAME}
+    export TF_VAR_git_url=${CI_PROJECT_URL}
+
+    if [[ ${newrelic} == "true" ]]
+    then
+      stack=newrelic
+      asdf install terraform 0.14.5
+      asdf install terragrunt 0.28.21
+      export PATH=/home/deployer/.asdf/installs/terraform/0.14.5/bin/:$PATH
+    else
+      asdf install
+    fi
+    cd "${CI_PROJECT_DIR}/terragrunt/${aws_account_name}/${region}/${cluster}/${stack}"
+    terragrunt destroy -auto-approve \
+    --terragrunt-non-interactive
+  when: manual
+
+.eks-patching-plan:
+  allow_failure: false
+  artifacts:
+    expire_in: 1 day
+  image: nexus-aws.dtc.prod.williamhill.plc/cloud-services/tf-pipeline-amz2:latest
+  script:
+  - |
+    PATH=/root/.asdf/shims:/root/.asdf/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    echo "Setting up git SAS and on-prem repo auth cfg"
+    echo "https://${GITLAB_API_USER}:${GITLAB_API_KEY}@gitlab.com" >> ~/.git-credentials
+    echo "https://${ONPREM_GITLAB_API_USER}:${ONPREM_GITLAB_API_KEY}@git.nonprod.williamhill.plc" >> ~/.git-credentials
+    git config --global credential.helper store
+    git config --global http.sslVerify false
+    /bin/asdf-install-plugins
+    /bin/asdf-install-versions
+    touch /tmp/kube-config
+    pip3 install eks-rolling-update
+    aws eks --region $region update-kubeconfig --name $cluster
+    echo "################################ ENV_SETUP ###############################################"
+    env
+    echo "############################## CLUSTER_NODES #############################################"
+    kubectl get nodes -A
+    echo "########################## DISRUPTION_BUDGET_CONFIG ######################################"
+    kubectl get poddisruptionbudgets -A
+    echo "############################## CLUSTER_PODS ##############################################"
+    kubectl get pods -A
+    echo "########################### CLUSTER_DEPLOYMENTS ##########################################"
+    kubectl get deployments -A
+    echo "########################### NODE_GROUPS ##########################################"
+    aws eks list-nodegroups --cluster-name $cluster --region $region
+    eks_rolling_update.py -c $cluster --plan
+  when: manual
+
+
+.eks-patching-apply:
+  allow_failure: false
+  artifacts:
+    expire_in: 1 day
+  image: nexus-aws.dtc.prod.williamhill.plc/cloud-services/tf-pipeline-amz2:latest
+  script:
+  - |
+    PATH=/root/.asdf/shims:/root/.asdf/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    echo "Setting up git SAS and on-prem repo auth cfg"
+    echo "https://${GITLAB_API_USER}:${GITLAB_API_KEY}@gitlab.com" >> ~/.git-credentials
+    echo "https://${ONPREM_GITLAB_API_USER}:${ONPREM_GITLAB_API_KEY}@git.nonprod.williamhill.plc" >> ~/.git-credentials
+    git config --global credential.helper store
+    git config --global http.sslVerify false
+    /bin/asdf-install-plugins
+    /bin/asdf-install-versions
+    touch /tmp/kube-config
+    pip3 install eks-rolling-update
+    aws eks --region $region update-kubeconfig --name $cluster
+    echo "################################ ENV_SETUP ###############################################"
+    env
+    echo "############################## CLUSTER_NODES #############################################"
+    kubectl get nodes -A
+    echo "########################## DISRUPTION_BUDGET_CONFIG ######################################"
+    kubectl get poddisruptionbudgets -A
+    echo "############################## CLUSTER_PODS ##############################################"
+    kubectl get pods -A
+    echo "########################### CLUSTER_DEPLOYMENTS ##########################################"
+    kubectl get deployments -A
+    echo "########################### NODE_GROUPS ##########################################"
+    aws eks list-nodegroups --cluster-name $cluster --region $region
+    eks_rolling_update.py -c $cluster
+    ### ******* Below stage currently disabled due to unavailbility of NodeGroups
+    #echo "########################## Upgrading the NodeGroups #########################"
+    #sh ${CI_PROJECT_DIR}/scripts/nodegroup_upgrade.sh $cluster $region
+    echo "############################## CLUSTER_NODES after upgrade #############################################"
+    kubectl get nodes -A
+  when: manual
+
+
+
+.eks-addon-apply:
+  allow_failure: false
+  artifacts:
+    expire_in: 1 day
+  image: nexus-aws.dtc.prod.williamhill.plc/cloud-services/tf-pipeline-amz2:latest
+  script:
+  - |
+    PATH=/root/.asdf/shims:/root/.asdf/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    echo "Setting up git SAS and on-prem repo auth cfg"
+    echo "https://${GITLAB_API_USER}:${GITLAB_API_KEY}@gitlab.com" >> ~/.git-credentials
+    echo "https://${ONPREM_GITLAB_API_USER}:${ONPREM_GITLAB_API_KEY}@git.nonprod.williamhill.plc" >> ~/.git-credentials
+    git config --global credential.helper store
+    git config --global http.sslVerify false
+    /bin/asdf-install-plugins
+    /bin/asdf-install-versions
+    touch /tmp/kube-config
+    pip3 install eks-rolling-update
+    aws eks --region $region update-kubeconfig --name $cluster
+    export CORE_DNS_VERSION=$(grep core_dns_version ${CI_PROJECT_DIR}/terragrunt/common.hcl|awk '{print $NF}'|sed 's/"//g')
+    export KUBE_PROXY_VERSION=$(grep kube_proxy_version ${CI_PROJECT_DIR}/terragrunt/common.hcl|awk '{print $NF}'|sed 's/"//g')
+    echo "################################ ENV_SETUP ###############################################"
+    env
+    echo "########################## Upgrading the CoreDNS and KubeProxy #########################"
+    sh ${CI_PROJECT_DIR}/scripts/coredns_upgrade.sh $CORE_DNS_VERSION $region
+    sh ${CI_PROJECT_DIR}/scripts/kubeproxy_upgrade.sh $KUBE_PROXY_VERSION $region
+  when: manual
+
+
+# dev account
+## 
+### Cluster Build
+:plan:tf:cluster-build:
+  needs:
+  - initial:job
+  extends:
+  - .dev-
+  - .terraform-plan
+  stage: dev:cluster-build:plan
+
+
+:apply:tf:cluster-build:
+  needs:
+  - :plan:tf:cluster-build
+  dependencies:
+  - :plan:tf:cluster-build
+  extends:
+  - .dev-
+  - .terraform-apply
+  stage: dev:cluster-build:apply
+
+
+:destroy-plan:tf:cluster-build:
+  needs:
+  - initial:job
+  extends:
+  - .dev-
+  - .terraform-destroy-plan
+  stage: dev:cluster-destroy:plan
+
+:destroy:tf:cluster-build:
+  needs:
+  - :destroy-plan:tf:cluster-build
+  dependencies:
+  - :destroy-plan:tf:cluster-build
+  extends:
+  - .dev-
+  - .terraform-destroy
+  stage: dev:cluster-destroy:apply
+
+
+:patching-plan:
+  needs:
+  - :apply:tf:cluster-build
+  extends:
+  - .dev-
+  - .eks-patching-plan
+  stage: dev:patching:plan
+
+:patching-apply:
+  needs:
+  - :patching-plan
+  extends:
+  - .dev-
+  - .eks-patching-apply
+  stage: dev:patching:apply
+
+
+:addons-apply:
+  needs:
+  - :apply:tf:cluster-build
+  extends:
+  - .dev-
+  - .eks-addon-apply
+  stage: dev:cluster-update-addon:apply
+
+### Newrelic configuration
+:plan:tf:newrelic-config:
+  needs:
+  - initial:job
+  extends:
+  - .dev-
+  - .terraform-plan
+  stage: dev:newrelic-config:plan
+  variables:
+    newrelic: "true"
+
+:apply:tf:newrelic-config:
+  needs:
+  - :plan:tf:newrelic-config
+  dependencies:
+  - :plan:tf:newrelic-config
+  extends:
+  - .dev-
+  - .terraform-apply
+  stage: dev:newrelic-config:apply
+  variables:
+    newrelic: "true"
+
+
+:destroy-plan:tf:newrelic-config:
+  needs:
+  - initial:job
+  extends:
+  - .dev-
+  - .terraform-destroy-plan
+  stage: dev:newrelic-destroy:plan
+  variables:
+    newrelic: "true"
+
+:destroy:tf:newrelic-config:
+  needs:
+  - :destroy-plan:tf:newrelic-config
+  dependencies:
+  - :destroy-plan:tf:newrelic-config
+  extends:
+  - .dev-
+  - .terraform-destroy
+  stage: dev:newrelic-destroy:apply
+  variables:
+    newrelic: "true"
